@@ -1,0 +1,57 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+local speedMultiplier = 50 -- Aumentando a velocidade para dar o efeito de raio
+local teleportActive = false
+
+-- Criar GUI para ativar/desativar
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 150, 0, 50)
+button.Position = UDim2.new(0.8, 0, 0.8, 0)
+button.Text = "Ativar Velocidade do Raio"
+button.Parent = screenGui
+
+-- Tornar o botão móvel
+button.Draggable = true
+button.Active = true
+
+-- Criar efeito elétrico (Opcional)
+local function createLightningEffect()
+    local effect = Instance.new("ParticleEmitter")
+    effect.Texture = "rbxassetid://255449862" -- Partícula elétrica
+    effect.Lifetime = NumberRange.new(0.2, 0.5)
+    effect.Rate = 100
+    effect.Speed = NumberRange.new(10, 20)
+    effect.Parent = humanoidRootPart
+    return effect
+end
+
+local effect = createLightningEffect()
+effect.Enabled = false -- Começa desativado
+
+-- Função para movimentação tipo teleporte (adaptado para mobile)
+game:GetService("RunService").RenderStepped:Connect(function()
+    if teleportActive then
+        local moveDirection = humanoid.MoveDirection
+        if moveDirection.Magnitude > 0 then
+            humanoidRootPart.CFrame = humanoidRootPart.CFrame + (moveDirection * speedMultiplier)
+        end
+    end
+end)
+
+-- Ativar/desativar modo "raio"
+button.MouseButton1Click:Connect(function()
+    teleportActive = not teleportActive
+    effect.Enabled = teleportActive
+
+    if teleportActive then
+        button.Text = "Desativar Velocidade do Raio"
+    else
+        button.Text = "Ativar Velocidade do Raio"
+    end
+end)
