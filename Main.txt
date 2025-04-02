@@ -3,7 +3,7 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
-local speedMultiplier = 50 -- Aumentando a velocidade para dar o efeito de raio
+local speedMultiplier = 19 -- Ajustado para 19
 local teleportActive = false
 
 -- Criar GUI para ativar/desativar
@@ -25,7 +25,9 @@ local function createLightningEffect()
     local effect = Instance.new("ParticleEmitter")
     effect.Texture = "rbxassetid://255449862" -- Partícula elétrica
     effect.Lifetime = NumberRange.new(0.2, 0.5)
-    effect.Rate = 100
+    effect.Rate = 19
+
+  
     effect.Speed = NumberRange.new(10, 20)
     effect.Parent = humanoidRootPart
     return effect
