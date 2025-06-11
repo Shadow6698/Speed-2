@@ -3,7 +3,7 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
-local speedMultiplier = 19 -- Ajustado para 19
+local speedMultiplier = 34 -- Ajustado para 34
 local teleportActive = false
 
 -- Criar GUI para ativar/desativar
