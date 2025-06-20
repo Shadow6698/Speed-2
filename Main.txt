@@ -3,40 +3,74 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
-local speedMultiplier = 34 -- Ajustado para 34
+local speedMultiplier = 34
 local teleportActive = false
 
--- Criar GUI para ativar/desativar
+-- Criar GUI principal
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "SpeedGui"
 
+-- Criar um frame para agrupar botão e textbox
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 100)
+mainFrame.Position = UDim2.new(0.75, 0, 0.75, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.Parent = screenGui
+
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Botão
 local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 150, 0, 50)
-button.Position = UDim2.new(0.8, 0, 0.8, 0)
+button.Size = UDim2.new(1, -10, 0, 40)
+button.Position = UDim2.new(0, 5, 0, 5)
 button.Text = "Ativar Velocidade do Raio"
-button.Parent = screenGui
+button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.SourceSansBold
+button.TextSize = 14
+button.Parent = mainFrame
 
--- Tornar o botão móvel
-button.Draggable = true
-button.Active = true
+-- TextBox grudada
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(1, -10, 0, 30)
+textBox.Position = UDim2.new(0, 5, 0, 50)
+textBox.PlaceholderText = "Velocidade"
+textBox.Text = tostring(speedMultiplier)
+textBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+textBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+textBox.Font = Enum.Font.SourceSansBold
+textBox.TextSize = 14
+textBox.Parent = mainFrame
 
--- Criar efeito elétrico (Opcional)
+-- Partículas elétricas
 local function createLightningEffect()
     local effect = Instance.new("ParticleEmitter")
-    effect.Texture = "rbxassetid://255449862" -- Partícula elétrica
+    effect.Texture = "rbxassetid://255449862"
     effect.Lifetime = NumberRange.new(0.2, 0.5)
     effect.Rate = 19
-
-  
     effect.Speed = NumberRange.new(10, 20)
     effect.Parent = humanoidRootPart
     return effect
 end
 
 local effect = createLightningEffect()
-effect.Enabled = false -- Começa desativado
+effect.Enabled = false
 
--- Função para movimentação tipo teleporte (adaptado para mobile)
+-- Atualizar velocidade
+textBox.FocusLost:Connect(function(enterPressed)
+    local newSpeed = tonumber(textBox.Text)
+    if newSpeed then
+        speedMultiplier = newSpeed
+        textBox.Text = tostring(newSpeed)
+    else
+        textBox.Text = tostring(speedMultiplier) -- Reset se inválido
+    end
+end)
+
+-- Movimento rápido
 game:GetService("RunService").RenderStepped:Connect(function()
     if teleportActive then
         local moveDirection = humanoid.MoveDirection
@@ -46,14 +80,16 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- Ativar/desativar modo "raio"
+-- Ativar/desativar
 button.MouseButton1Click:Connect(function()
     teleportActive = not teleportActive
     effect.Enabled = teleportActive
 
     if teleportActive then
         button.Text = "Desativar Velocidade do Raio"
+        button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
         button.Text = "Ativar Velocidade do Raio"
+        button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
 end)
