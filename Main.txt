@@ -1,49 +1,39 @@
-local player = game.Players.LocalPlayer
+-- Flash Speedster Script | R6 + R15 Compatible | Mobile Friendly
+-- Sistema de velocidade por teleport + efeitos visuais
+
+pcall(function() game.CoreGui:FindFirstChild("FlashGUI"):Destroy() end)
+
+local Players = game:GetService("Players")
+local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local cam = workspace.CurrentCamera
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
+-- Configurações
 local speedMultiplier = 34
-local teleportActive = false
+local isFlash = false
+local effectsEnabled = true
+local speedActive = false
 
--- Criar GUI principal
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.Name = "SpeedGui"
+-- Sons
+local rumble = Instance.new("Sound", humanoidRootPart)
+rumble.SoundId = "rbxassetid://1837635124"
+rumble.Looped = true
+rumble.Volume = 0.8
 
--- Criar um frame para agrupar botão e textbox
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 180, 0, 100)
-mainFrame.Position = UDim2.new(0.75, 0, 0.75, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.Parent = screenGui
+local zap = Instance.new("Sound", humanoidRootPart)
+zap.SoundId = "rbxassetid://138218317"
+zap.Volume = 0.6
 
-mainFrame.Active = true
-mainFrame.Draggable = true
-
--- Botão
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(1, -10, 0, 40)
-button.Position = UDim2.new(0, 5, 0, 5)
-button.Text = "Ativar Velocidade do Raio"
-button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 14
-button.Parent = mainFrame
-
--- TextBox grudada
-local textBox = Instance.new("TextBox")
-textBox.Size = UDim2.new(1, -10, 0, 30)
-textBox.Position = UDim2.new(0, 5, 0, 50)
-textBox.PlaceholderText = "Velocidade"
-textBox.Text = tostring(speedMultiplier)
-textBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-textBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-textBox.Font = Enum.Font.SourceSansBold
-textBox.TextSize = 14
-textBox.Parent = mainFrame
+-- Cores dos rastros (Vermelho)
+local trailColor = ColorSequence.new(Color3.fromRGB(255, 0, 0)) -- Vermelho
+local bodyTrailColor = ColorSequence.new(Color3.fromRGB(255, 100, 100)) -- Vermelho claro
+local electricTrails = {}
 
 -- Partículas elétricas
 local function createLightningEffect()
@@ -53,43 +43,295 @@ local function createLightningEffect()
     effect.Rate = 19
     effect.Speed = NumberRange.new(10, 20)
     effect.Parent = humanoidRootPart
+    effect.Enabled = false
     return effect
 end
 
-local effect = createLightningEffect()
-effect.Enabled = false
+local lightningParticles = createLightningEffect()
 
--- Atualizar velocidade
-textBox.FocusLost:Connect(function(enterPressed)
-    local newSpeed = tonumber(textBox.Text)
-    if newSpeed then
-        speedMultiplier = newSpeed
-        textBox.Text = tostring(newSpeed)
-    else
-        textBox.Text = tostring(speedMultiplier) -- Reset se inválido
+-- Função para criar rastro de velocidade
+local function lightningTrail()
+    if not effectsEnabled or not speedActive then return end
+    
+    local a0 = Instance.new("Attachment", humanoidRootPart)
+    local a1 = Instance.new("Attachment", humanoidRootPart)
+    a0.Position = Vector3.new(0, 2, 0)
+    a1.Position = Vector3.new(0, -2, 0)
+
+    local trail = Instance.new("Trail", humanoidRootPart)  
+    trail.Attachment0 = a0  
+    trail.Attachment1 = a1  
+    trail.Color = trailColor  
+    trail.Lifetime = 0.4  
+    trail.WidthScale = NumberSequence.new({  
+        NumberSequenceKeypoint.new(0, 1.5),   
+        NumberSequenceKeypoint.new(1, 0)  
+    })  
+    trail.Transparency = NumberSequence.new(0.1)  
+    trail.LightEmission = 1  
+
+    Debris:AddItem(trail, 1.2)  
+    Debris:AddItem(a0, 1.2)  
+    Debris:AddItem(a1, 1.2)
+end
+
+-- Função para criar rastros elétricos no corpo
+local function createElectricTrails()
+    if not effectsEnabled then return end
+    
+    local parts = {
+        {part = character:FindFirstChild("Head"), offset = Vector3.new(0, 0.4, 0)},
+        {part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftUpperArm"), offset = Vector3.new(0, -0.5, 0)},
+        {part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightUpperArm"), offset = Vector3.new(0, -0.5, 0)},
+        {part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftUpperLeg"), offset = Vector3.new(0, -0.5, 0)},
+        {part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightUpperLeg"), offset = Vector3.new(0, -0.5, 0)},
+        {part = humanoidRootPart, offset = Vector3.new(0.5, 1, 0)}
+    }
+    
+    for _, info in ipairs(parts) do  
+        if info.part then  
+            local att0 = Instance.new("Attachment", info.part)  
+            local att1 = Instance.new("Attachment", info.part)  
+            att0.Position = info.offset  
+            att1.Position = info.offset + Vector3.new(0, -0.3, 0)  
+            
+            local trail = Instance.new("Trail", info.part)  
+            trail.Attachment0 = att0  
+            trail.Attachment1 = att1  
+            trail.Color = bodyTrailColor  
+            trail.Lifetime = 0.3  
+            trail.Transparency = NumberSequence.new(0.2)  
+            trail.WidthScale = NumberSequence.new(0.4)  
+            trail.LightEmission = 1  
+            
+            table.insert(electricTrails, trail)  
+            table.insert(electricTrails, att0)  
+            table.insert(electricTrails, att1)  
+        end  
     end
-end)
+end
 
--- Movimento rápido
-game:GetService("RunService").RenderStepped:Connect(function()
-    if teleportActive then
-        local moveDirection = humanoid.MoveDirection
-        if moveDirection.Magnitude > 0 then
-            humanoidRootPart.CFrame = humanoidRootPart.CFrame + (moveDirection * speedMultiplier)
+-- Função para destruir rastros elétricos
+local function destroyElectricTrails()
+    for _, obj in pairs(electricTrails) do
+        if obj and obj.Parent then 
+            obj:Destroy() 
         end
     end
+    electricTrails = {}
+end
+
+-- Sistema de movimento rápido (baseado no seu código)
+local function startSpeedSystem()
+    RunService.RenderStepped:Connect(function()
+        if speedActive and isFlash then
+            local moveDirection = humanoid.MoveDirection
+            if moveDirection.Magnitude > 0 then
+                humanoidRootPart.CFrame = humanoidRootPart.CFrame + (moveDirection * speedMultiplier)
+                
+                -- Criar rastros quando se movendo
+                if effectsEnabled and math.random() < 0.3 then
+                    lightningTrail()
+                end
+                
+                -- Som ocasional
+                if zap and not zap.IsPlaying and math.random() < 0.1 then
+                    zap:Play()
+                end
+            end
+        end
+    end)
+end
+
+-- Função principal do Flash
+local function toggleFlash()
+    isFlash = not isFlash
+    
+    if isFlash then
+        -- Efeitos sonoros
+        if rumble then rumble:Play() end
+        
+        -- Efeito de câmera
+        TweenService:Create(cam, TweenInfo.new(0.3), {FieldOfView = 90}):Play()
+        
+        -- Criar rastros elétricos
+        if effectsEnabled then
+            createElectricTrails()
+        end
+        
+        -- Ativar partículas se velocidade estiver ativa
+        if speedActive then
+            lightningParticles.Enabled = true
+        end
+        
+    else
+        -- Desativar Flash
+        if rumble then rumble:Stop() end
+        
+        -- Restaurar câmera
+        TweenService:Create(cam, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
+        
+        -- Remover efeitos
+        destroyElectricTrails()
+        lightningParticles.Enabled = false
+    end
+end
+
+-- Função para ativar/desativar velocidade
+local function toggleSpeed()
+    speedActive = not speedActive
+    
+    if speedActive and isFlash then
+        lightningParticles.Enabled = true
+    else
+        lightningParticles.Enabled = false
+    end
+end
+
+-- Criar GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "FlashGUI"
+gui.ResetOnSpawn = false
+
+-- Frame principal
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0, 220, 0, 140)
+mainFrame.Position = UDim2.new(0, 20, 1, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Título
+local titleLabel = Instance.new("TextLabel", mainFrame)
+titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+titleLabel.Text = "⚡ FLASH POWERS ⚡"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.BorderSizePixel = 0
+
+-- Botão Flash Principal
+local flashBtn = Instance.new("TextButton", mainFrame)
+flashBtn.Size = UDim2.new(0.95, 0, 0, 30)
+flashBtn.Position = UDim2.new(0.025, 0, 0, 30)
+flashBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+flashBtn.Text = "⚡ FLASH: OFF"
+flashBtn.TextSize = 14
+flashBtn.Font = Enum.Font.SourceSansBold
+flashBtn.TextColor3 = Color3.new(1, 1, 1)
+flashBtn.BorderSizePixel = 1
+
+-- Botão Velocidade
+local speedBtn = Instance.new("TextButton", mainFrame)
+speedBtn.Size = UDim2.new(0.6, 0, 0, 25)
+speedBtn.Position = UDim2.new(0.025, 0, 0, 65)
+speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+speedBtn.Text = "Velocidade: OFF"
+speedBtn.TextSize = 12
+speedBtn.Font = Enum.Font.SourceSans
+speedBtn.TextColor3 = Color3.new(1, 1, 1)
+speedBtn.BorderSizePixel = 1
+
+-- TextBox para velocidade
+local speedInput = Instance.new("TextBox", mainFrame)
+speedInput.Size = UDim2.new(0.35, 0, 0, 25)
+speedInput.Position = UDim2.new(0.63, 0, 0, 65)
+speedInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+speedInput.Text = tostring(speedMultiplier)
+speedInput.PlaceholderText = "Velocidade"
+speedInput.TextSize = 12
+speedInput.Font = Enum.Font.SourceSans
+speedInput.TextColor3 = Color3.new(0, 0, 0)
+speedInput.BorderSizePixel = 1
+
+-- Botão Efeitos
+local effectBtn = Instance.new("TextButton", mainFrame)
+effectBtn.Size = UDim2.new(0.95, 0, 0, 25)
+effectBtn.Position = UDim2.new(0.025, 0, 0, 95)
+effectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+effectBtn.Text = "Efeitos: ON"
+effectBtn.TextSize = 12
+effectBtn.Font = Enum.Font.SourceSans
+effectBtn.TextColor3 = Color3.new(1, 1, 1)
+effectBtn.BorderSizePixel = 1
+
+-- Eventos dos botões
+flashBtn.MouseButton1Click:Connect(function()
+    toggleFlash()
+    if isFlash then
+        flashBtn.Text = "⚡ FLASH: ON"
+        flashBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        flashBtn.Text = "⚡ FLASH: OFF"
+        flashBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
 end)
 
--- Ativar/desativar
-button.MouseButton1Click:Connect(function()
-    teleportActive = not teleportActive
-    effect.Enabled = teleportActive
-
-    if teleportActive then
-        button.Text = "Desativar Velocidade do Raio"
-        button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+speedBtn.MouseButton1Click:Connect(function()
+    toggleSpeed()
+    if speedActive then
+        speedBtn.Text = "Velocidade: ON"
+        speedBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        button.Text = "Ativar Velocidade do Raio"
-        button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        speedBtn.Text = "Velocidade: OFF"
+        speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+end)
+
+effectBtn.MouseButton1Click:Connect(function()
+    effectsEnabled = not effectsEnabled
+    if effectsEnabled then
+        effectBtn.Text = "Efeitos: ON"
+        effectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        if isFlash then createElectricTrails() end
+    else
+        effectBtn.Text = "Efeitos: OFF"
+        effectBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        destroyElectricTrails()
+    end
+end)
+
+-- Atualizar velocidade via TextBox
+speedInput.FocusLost:Connect(function(enterPressed)
+    local newSpeed = tonumber(speedInput.Text)
+    if newSpeed then
+        speedMultiplier = newSpeed
+        speedInput.Text = tostring(newSpeed)
+    else
+        speedInput.Text = tostring(speedMultiplier)
+    end
+end)
+
+-- Iniciar sistema de velocidade
+startSpeedSystem()
+
+-- Limpeza ao trocar de personagem
+player.CharacterRemoving:Connect(function()
+    isFlash = false
+    speedActive = false
+    destroyElectricTrails()
+    if rumble then rumble:Stop() end
+end)
+
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    
+    -- Recriar sons
+    rumble = Instance.new("Sound", humanoidRootPart)
+    rumble.SoundId = "rbxassetid://1837635124"
+    rumble.Looped = true
+    rumble.Volume = 0.8
+    
+    zap = Instance.new("Sound", humanoidRootPart)
+    zap.SoundId = "rbxassetid://138218317"
+    zap.Volume = 0.6
+    
+    -- Recriar partículas
+    lightningParticles = createLightningEffect()
 end)
