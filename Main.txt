@@ -1,5 +1,6 @@
 -- Flash Speedster Script | R6 + R15 Compatible | Mobile Friendly
--- Sistema de velocidade por teleport + efeitos visuais
+-- Sistema de velocidade por teleport + efeitos visuais + Sistema de Cores
+-- GUI AUMENTADA + CORES CORRIGIDAS
 
 pcall(function() game.CoreGui:FindFirstChild("FlashGUI"):Destroy() end)
 
@@ -20,6 +21,65 @@ local isFlash = false
 local effectsEnabled = true
 local speedActive = false
 
+-- Sistema de Cores TOTALMENTE CORRIGIDO
+local colorSchemes = {
+    vermelho = {
+        primary = Color3.fromRGB(255, 0, 0),
+        secondary = Color3.fromRGB(255, 100, 100),
+        border = Color3.fromRGB(255, 0, 0),
+        name = "Vermelho"
+    },
+    azul = {
+        primary = Color3.fromRGB(0, 100, 255),
+        secondary = Color3.fromRGB(100, 150, 255),
+        border = Color3.fromRGB(0, 100, 255),
+        name = "Azul"
+    },
+    preto = {
+        primary = Color3.fromRGB(0, 0, 0), -- REALMENTE PRETO AGORA
+        secondary = Color3.fromRGB(25, 25, 25), -- CINZA MUITO ESCURO
+        border = Color3.fromRGB(0, 0, 0),
+        name = "Preto"
+    },
+    branco = {
+        primary = Color3.fromRGB(255, 255, 255),
+        secondary = Color3.fromRGB(200, 200, 255),
+        border = Color3.fromRGB(255, 255, 255),
+        name = "Branco"
+    },
+    roxo = {
+        primary = Color3.fromRGB(75, 0, 130), -- ROXO ESCURO REAL (INDIGO)
+        secondary = Color3.fromRGB(138, 43, 226), -- ROXO VIOLETA
+        border = Color3.fromRGB(75, 0, 130),
+        name = "Roxo"
+    },
+    verde = {
+        primary = Color3.fromRGB(0, 255, 0),
+        secondary = Color3.fromRGB(100, 255, 100),
+        border = Color3.fromRGB(0, 255, 0),
+        name = "Verde"
+    },
+    dourado = {
+        primary = Color3.fromRGB(255, 215, 0),
+        secondary = Color3.fromRGB(255, 235, 100),
+        border = Color3.fromRGB(255, 215, 0),
+        name = "Dourado"
+    },
+    rosa = {
+        primary = Color3.fromRGB(255, 20, 147), -- ROSA PINK REAL
+        secondary = Color3.fromRGB(255, 105, 180), -- ROSA QUENTE
+        border = Color3.fromRGB(255, 20, 147),
+        name = "Rosa"
+    }
+}
+
+local currentColorScheme = "vermelho"
+
+-- Função para obter cores atuais
+local function getCurrentColors()
+    return colorSchemes[currentColorScheme]
+end
+
 -- Sons
 local rumble = Instance.new("Sound", humanoidRootPart)
 rumble.SoundId = "rbxassetid://1837635124"
@@ -30,9 +90,6 @@ local zap = Instance.new("Sound", humanoidRootPart)
 zap.SoundId = "rbxassetid://138218317"
 zap.Volume = 0.6
 
--- Cores dos rastros (Vermelho)
-local trailColor = ColorSequence.new(Color3.fromRGB(255, 0, 0)) -- Vermelho
-local bodyTrailColor = ColorSequence.new(Color3.fromRGB(255, 100, 100)) -- Vermelho claro
 local electricTrails = {}
 
 -- Partículas elétricas
@@ -53,6 +110,8 @@ local lightningParticles = createLightningEffect()
 local function lightningTrail()
     if not effectsEnabled or not speedActive then return end
     
+    local colors = getCurrentColors()
+    
     local a0 = Instance.new("Attachment", humanoidRootPart)
     local a1 = Instance.new("Attachment", humanoidRootPart)
     a0.Position = Vector3.new(0, 2, 0)
@@ -61,7 +120,7 @@ local function lightningTrail()
     local trail = Instance.new("Trail", humanoidRootPart)  
     trail.Attachment0 = a0  
     trail.Attachment1 = a1  
-    trail.Color = trailColor  
+    trail.Color = ColorSequence.new(colors.primary)
     trail.Lifetime = 0.4  
     trail.WidthScale = NumberSequence.new({  
         NumberSequenceKeypoint.new(0, 1.5),   
@@ -78,6 +137,8 @@ end
 -- Função para criar rastros elétricos no corpo
 local function createElectricTrails()
     if not effectsEnabled then return end
+    
+    local colors = getCurrentColors()
     
     local parts = {
         {part = character:FindFirstChild("Head"), offset = Vector3.new(0, 0.4, 0)},
@@ -98,7 +159,7 @@ local function createElectricTrails()
             local trail = Instance.new("Trail", info.part)  
             trail.Attachment0 = att0  
             trail.Attachment1 = att1  
-            trail.Color = bodyTrailColor  
+            trail.Color = ColorSequence.new(colors.secondary)
             trail.Lifetime = 0.3  
             trail.Transparency = NumberSequence.new(0.2)  
             trail.WidthScale = NumberSequence.new(0.4)  
@@ -121,7 +182,18 @@ local function destroyElectricTrails()
     electricTrails = {}
 end
 
--- Sistema de movimento rápido (baseado no seu código)
+-- Função para atualizar cor da GUI
+local function updateGUIColors()
+    local colors = getCurrentColors()
+    if titleLabel then
+        titleLabel.BackgroundColor3 = colors.primary
+    end
+    if mainFrame then
+        mainFrame.BorderColor3 = colors.border
+    end
+end
+
+-- Sistema de movimento rápido
 local function startSpeedSystem()
     RunService.RenderStepped:Connect(function()
         if speedActive and isFlash then
@@ -188,24 +260,40 @@ local function toggleSpeed()
     end
 end
 
--- Criar GUI
+-- Função para trocar cor
+local function changeColorScheme(newScheme)
+    if colorSchemes[newScheme] then
+        currentColorScheme = newScheme
+        updateGUIColors()
+        
+        -- Se o Flash estiver ativo, recriar os efeitos com a nova cor
+        if isFlash then
+            destroyElectricTrails()
+            if effectsEnabled then
+                createElectricTrails()
+            end
+        end
+    end
+end
+
+-- Criar GUI - AUMENTADA
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "FlashGUI"
 gui.ResetOnSpawn = false
 
--- Frame principal
+-- Frame principal - TAMANHO DIMINUÍDO
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 220, 0, 140)
-mainFrame.Position = UDim2.new(0, 20, 1, -160)
+mainFrame.Size = UDim2.new(0, 300, 0, 220) -- DIMINUÍDO de 380x280 para 300x220
+mainFrame.Position = UDim2.new(0, 20, 1, -240) -- AJUSTADO posição
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
+mainFrame.BorderSizePixel = 2 -- DIMINUÍDO
 mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Título
+-- Título - DIMINUÍDO
 local titleLabel = Instance.new("TextLabel", mainFrame)
-titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.Size = UDim2.new(1, 0, 0, 28) -- DIMINUÍDO de 35 para 28
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 titleLabel.Text = "⚡ FLASH POWERS ⚡"
@@ -214,52 +302,119 @@ titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.BorderSizePixel = 0
 
--- Botão Flash Principal
+-- Botão Flash Principal - DIMINUÍDO
 local flashBtn = Instance.new("TextButton", mainFrame)
-flashBtn.Size = UDim2.new(0.95, 0, 0, 30)
-flashBtn.Position = UDim2.new(0.025, 0, 0, 30)
+flashBtn.Size = UDim2.new(0.95, 0, 0, 32) -- DIMINUÍDO de 40 para 32
+flashBtn.Position = UDim2.new(0.025, 0, 0, 32) -- AJUSTADO posição
 flashBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 flashBtn.Text = "⚡ FLASH: OFF"
-flashBtn.TextSize = 14
+flashBtn.TextSize = 14 -- DIMINUÍDO de 16 para 14
 flashBtn.Font = Enum.Font.SourceSansBold
 flashBtn.TextColor3 = Color3.new(1, 1, 1)
-flashBtn.BorderSizePixel = 1
+flashBtn.BorderSizePixel = 1 -- DIMINUÍDO
 
--- Botão Velocidade
+-- Botão Velocidade - DIMINUÍDO
 local speedBtn = Instance.new("TextButton", mainFrame)
-speedBtn.Size = UDim2.new(0.6, 0, 0, 25)
-speedBtn.Position = UDim2.new(0.025, 0, 0, 65)
+speedBtn.Size = UDim2.new(0.6, 0, 0, 28) -- DIMINUÍDO de 35 para 28
+speedBtn.Position = UDim2.new(0.025, 0, 0, 70) -- AJUSTADO posição
 speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 speedBtn.Text = "Velocidade: OFF"
-speedBtn.TextSize = 12
+speedBtn.TextSize = 12 -- DIMINUÍDO de 14 para 12
 speedBtn.Font = Enum.Font.SourceSans
 speedBtn.TextColor3 = Color3.new(1, 1, 1)
-speedBtn.BorderSizePixel = 1
+speedBtn.BorderSizePixel = 1 -- DIMINUÍDO
 
--- TextBox para velocidade
+-- TextBox para velocidade - DIMINUÍDO
 local speedInput = Instance.new("TextBox", mainFrame)
-speedInput.Size = UDim2.new(0.35, 0, 0, 25)
-speedInput.Position = UDim2.new(0.63, 0, 0, 65)
+speedInput.Size = UDim2.new(0.35, 0, 0, 28) -- DIMINUÍDO de 35 para 28
+speedInput.Position = UDim2.new(0.63, 0, 0, 70) -- AJUSTADO posição
 speedInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 speedInput.Text = tostring(speedMultiplier)
 speedInput.PlaceholderText = "Velocidade"
-speedInput.TextSize = 12
+speedInput.TextSize = 12 -- DIMINUÍDO de 14 para 12
 speedInput.Font = Enum.Font.SourceSans
 speedInput.TextColor3 = Color3.new(0, 0, 0)
-speedInput.BorderSizePixel = 1
+speedInput.BorderSizePixel = 1 -- DIMINUÍDO
 
--- Botão Efeitos
+-- Botão Efeitos - DIMINUÍDO
 local effectBtn = Instance.new("TextButton", mainFrame)
-effectBtn.Size = UDim2.new(0.95, 0, 0, 25)
-effectBtn.Position = UDim2.new(0.025, 0, 0, 95)
+effectBtn.Size = UDim2.new(0.95, 0, 0, 28) -- DIMINUÍDO de 35 para 28
+effectBtn.Position = UDim2.new(0.025, 0, 0, 105) -- AJUSTADO posição
 effectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 effectBtn.Text = "Efeitos: ON"
-effectBtn.TextSize = 12
+effectBtn.TextSize = 12 -- DIMINUÍDO de 14 para 12
 effectBtn.Font = Enum.Font.SourceSans
 effectBtn.TextColor3 = Color3.new(1, 1, 1)
-effectBtn.BorderSizePixel = 1
+effectBtn.BorderSizePixel = 1 -- DIMINUÍDO
 
--- Eventos dos botões
+-- Label para cores - DIMINUÍDO
+local colorLabel = Instance.new("TextLabel", mainFrame)
+colorLabel.Size = UDim2.new(1, 0, 0, 22) -- DIMINUÍDO de 25 para 22
+colorLabel.Position = UDim2.new(0, 0, 0, 140) -- AJUSTADO posição
+colorLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+colorLabel.Text = "🎨 Cores dos Efeitos:"
+colorLabel.TextColor3 = Color3.new(1, 1, 1)
+colorLabel.TextSize = 11 -- DIMINUÍDO de 13 para 11
+colorLabel.Font = Enum.Font.SourceSansBold
+colorLabel.BorderSizePixel = 0
+
+-- Frame para botões de cor - DIMINUÍDO
+local colorFrame = Instance.new("Frame", mainFrame)
+colorFrame.Size = UDim2.new(0.95, 0, 0, 55) -- DIMINUÍDO de 70 para 55
+colorFrame.Position = UDim2.new(0.025, 0, 0, 165) -- AJUSTADO posição
+colorFrame.BackgroundTransparency = 1
+
+-- Criar botões de cor em grade 4x2 - AUMENTADOS
+local colorButtons = {}
+local colorKeys = {"vermelho", "azul", "preto", "branco", "roxo", "verde", "dourado", "rosa"}
+
+for i, colorKey in ipairs(colorKeys) do
+    local row = math.floor((i-1) / 4)
+    local col = (i-1) % 4
+    
+    local colorBtn = Instance.new("TextButton", colorFrame)
+    colorBtn.Size = UDim2.new(0.23, 0, 0.38, 0) -- DIMINUÍDO altura
+    colorBtn.Position = UDim2.new(col * 0.25 + 0.01, 0, row * 0.5 + 0.06, 0)
+    colorBtn.BackgroundColor3 = colorSchemes[colorKey].primary
+    colorBtn.Text = ""
+    colorBtn.BorderSizePixel = 2 -- DIMINUÍDO
+    colorBtn.BorderColor3 = Color3.new(1, 1, 1)
+    
+    -- Texto com nome da cor - DIMINUÍDO
+    local colorText = Instance.new("TextLabel", colorBtn)
+    colorText.Size = UDim2.new(1, 0, 1, 0)
+    colorText.Position = UDim2.new(0, 0, 0, 0)
+    colorText.BackgroundTransparency = 1
+    colorText.Text = colorSchemes[colorKey].name
+    colorText.TextColor3 = Color3.new(1, 1, 1)
+    colorText.TextSize = 9 -- DIMINUÍDO de 10 para 9
+    colorText.Font = Enum.Font.SourceSansBold
+    colorText.TextStrokeTransparency = 0.5
+    colorText.TextStrokeColor3 = Color3.new(0, 0, 0)
+    
+    colorBtn.MouseButton1Click:Connect(function()
+        changeColorScheme(colorKey)
+        
+        -- Atualizar visual dos botões (destacar selecionado)
+        for _, btn in pairs(colorButtons) do
+            btn.BorderColor3 = Color3.new(1, 1, 1)
+            btn.BorderSizePixel = 2 -- DIMINUÍDO
+        end
+        
+        colorBtn.BorderColor3 = Color3.new(0, 1, 0)
+        colorBtn.BorderSizePixel = 3 -- DIMINUÍDO para destacar menos
+    end)
+    
+    table.insert(colorButtons, colorBtn)
+end
+
+-- Destacar cor inicial
+if colorButtons[1] then
+    colorButtons[1].BorderColor3 = Color3.new(0, 1, 0)
+    colorButtons[1].BorderSizePixel = 3
+end
+
+-- Eventos dos botões principais
 flashBtn.MouseButton1Click:Connect(function()
     toggleFlash()
     if isFlash then
@@ -305,6 +460,9 @@ speedInput.FocusLost:Connect(function(enterPressed)
         speedInput.Text = tostring(speedMultiplier)
     end
 end)
+
+-- Inicializar cores da GUI
+updateGUIColors()
 
 -- Iniciar sistema de velocidade
 startSpeedSystem()
