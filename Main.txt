@@ -1,495 +1,176 @@
--- Flash Speedster Script | R6 + R15 Compatible | Mobile Friendly
--- Sistema de velocidade por teleport + efeitos visuais + Sistema de Cores
--- GUI AUMENTADA + CORES CORRIGIDAS
-
-pcall(function() game.CoreGui:FindFirstChild("FlashGUI"):Destroy() end)
+-- Script para criar uma GUI gigantesca no Roblox
+-- Coloque este script em ServerScriptService ou StarterPlayerScripts
 
 local Players = game:GetService("Players")
-local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local cam = workspace.CurrentCamera
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Configurações
-local speedMultiplier = 34
-local isFlash = false
-local effectsEnabled = true
-local speedActive = false
+-- Criar ScreenGui principal
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GUIGigantesca"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
--- Sistema de Cores TOTALMENTE CORRIGIDO
-local colorSchemes = {
-    vermelho = {
-        primary = Color3.fromRGB(255, 0, 0),
-        secondary = Color3.fromRGB(255, 100, 100),
-        border = Color3.fromRGB(255, 0, 0),
-        name = "Vermelho"
-    },
-    azul = {
-        primary = Color3.fromRGB(0, 100, 255),
-        secondary = Color3.fromRGB(100, 150, 255),
-        border = Color3.fromRGB(0, 100, 255),
-        name = "Azul"
-    },
-    preto = {
-        primary = Color3.fromRGB(0, 0, 0), -- REALMENTE PRETO AGORA
-        secondary = Color3.fromRGB(25, 25, 25), -- CINZA MUITO ESCURO
-        border = Color3.fromRGB(0, 0, 0),
-        name = "Preto"
-    },
-    branco = {
-        primary = Color3.fromRGB(255, 255, 255),
-        secondary = Color3.fromRGB(200, 200, 255),
-        border = Color3.fromRGB(255, 255, 255),
-        name = "Branco"
-    },
-    roxo = {
-        primary = Color3.fromRGB(75, 0, 130), -- ROXO ESCURO REAL (INDIGO)
-        secondary = Color3.fromRGB(138, 43, 226), -- ROXO VIOLETA
-        border = Color3.fromRGB(75, 0, 130),
-        name = "Roxo"
-    },
-    verde = {
-        primary = Color3.fromRGB(0, 255, 0),
-        secondary = Color3.fromRGB(100, 255, 100),
-        border = Color3.fromRGB(0, 255, 0),
-        name = "Verde"
-    },
-    dourado = {
-        primary = Color3.fromRGB(255, 215, 0),
-        secondary = Color3.fromRGB(255, 235, 100),
-        border = Color3.fromRGB(255, 215, 0),
-        name = "Dourado"
-    },
-    rosa = {
-        primary = Color3.fromRGB(255, 20, 147), -- ROSA PINK REAL
-        secondary = Color3.fromRGB(255, 105, 180), -- ROSA QUENTE
-        border = Color3.fromRGB(255, 20, 147),
-        name = "Rosa"
-    }
+-- Frame principal gigantesco
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0.9, 0, 0.9, 0) -- 90% da tela
+mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0) -- Centralizado
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Adicionar cantos arredondados
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 20)
+corner.Parent = mainFrame
+
+-- Adicionar gradiente colorido
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)), -- Magenta
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)), -- Ciano
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 0)) -- Amarelo
 }
+gradient.Rotation = 45
+gradient.Parent = mainFrame
 
-local currentColorScheme = "vermelho"
+-- Texto principal gigantesco
+local mainText = Instance.new("TextLabel")
+mainText.Size = UDim2.new(0.8, 0, 0.4, 0)
+mainText.Position = UDim2.new(0.1, 0, 0.1, 0)
+mainText.BackgroundTransparency = 1
+mainText.Text = "HOJE N LOLYTA KKJ"
+mainText.TextColor3 = Color3.new(1, 1, 1) -- Branco
+mainText.TextStrokeTransparency = 0
+mainText.TextStrokeColor3 = Color3.new(0, 0, 0) -- Contorno preto
+mainText.TextStrokeThickness = 3
+mainText.Font = Enum.Font.GothamBold
+mainText.TextScaled = true
+mainText.Parent = mainFrame
 
--- Função para obter cores atuais
-local function getCurrentColors()
-    return colorSchemes[currentColorScheme]
-end
+-- Efeito de sombra no texto
+local shadowText = mainText:Clone()
+shadowText.Position = UDim2.new(0.1, 5, 0.1, 5)
+shadowText.TextColor3 = Color3.new(0, 0, 0)
+shadowText.TextStrokeTransparency = 1
+shadowText.ZIndex = mainText.ZIndex - 1
+shadowText.Parent = mainFrame
 
--- Sons
-local rumble = Instance.new("Sound", humanoidRootPart)
-rumble.SoundId = "rbxassetid://1837635124"
-rumble.Looped = true
-rumble.Volume = 0.8
+-- Botão de fechar
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 50, 0, 50)
+closeButton.Position = UDim2.new(1, -60, 0, 10)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.TextScaled = true
+closeButton.Font = Enum.Font.GothamBold
+closeButton.BorderSizePixel = 0
+closeButton.Parent = mainFrame
 
-local zap = Instance.new("Sound", humanoidRootPart)
-zap.SoundId = "rbxassetid://138218317"
-zap.Volume = 0.6
+-- Cantos arredondados para o botão
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 25)
+buttonCorner.Parent = closeButton
 
-local electricTrails = {}
+-- Texto adicional
+local subText = Instance.new("TextLabel")
+subText.Size = UDim2.new(0.6, 0, 0.2, 0)
+subText.Position = UDim2.new(0.2, 0, 0.6, 0)
+subText.BackgroundTransparency = 1
+subText.Text = "GUI GIGANTESCA ATIVA! 🔥"
+subText.TextColor3 = Color3.new(1, 1, 1)
+subText.TextStrokeTransparency = 0
+subText.TextStrokeColor3 = Color3.new(0, 0, 0)
+subText.TextStrokeThickness = 2
+subText.Font = Enum.Font.Gotham
+subText.TextScaled = true
+subText.Parent = mainFrame
 
--- Partículas elétricas
-local function createLightningEffect()
-    local effect = Instance.new("ParticleEmitter")
-    effect.Texture = "rbxassetid://255449862"
-    effect.Lifetime = NumberRange.new(0.2, 0.5)
-    effect.Rate = 19
-    effect.Speed = NumberRange.new(10, 20)
-    effect.Parent = humanoidRootPart
-    effect.Enabled = false
-    return effect
-end
-
-local lightningParticles = createLightningEffect()
-
--- Função para criar rastro de velocidade
-local function lightningTrail()
-    if not effectsEnabled or not speedActive then return end
+-- Partículas/efeitos visuais
+for i = 1, 20 do
+    local particle = Instance.new("Frame")
+    particle.Size = UDim2.new(0, math.random(10, 30), 0, math.random(10, 30))
+    particle.Position = UDim2.new(0, math.random(0, 800), 0, math.random(0, 600))
+    particle.BackgroundColor3 = Color3.fromHSV(math.random(), 1, 1)
+    particle.BorderSizePixel = 0
+    particle.Parent = mainFrame
     
-    local colors = getCurrentColors()
+    -- Fazer as partículas girarem
+    local rotateCorner = Instance.new("UICorner")
+    rotateCorner.CornerRadius = UDim.new(0, 15)
+    rotateCorner.Parent = particle
     
-    local a0 = Instance.new("Attachment", humanoidRootPart)
-    local a1 = Instance.new("Attachment", humanoidRootPart)
-    a0.Position = Vector3.new(0, 2, 0)
-    a1.Position = Vector3.new(0, -2, 0)
-
-    local trail = Instance.new("Trail", humanoidRootPart)  
-    trail.Attachment0 = a0  
-    trail.Attachment1 = a1  
-    trail.Color = ColorSequence.new(colors.primary)
-    trail.Lifetime = 0.4  
-    trail.WidthScale = NumberSequence.new({  
-        NumberSequenceKeypoint.new(0, 1.5),   
-        NumberSequenceKeypoint.new(1, 0)  
-    })  
-    trail.Transparency = NumberSequence.new(0.1)  
-    trail.LightEmission = 1  
-
-    Debris:AddItem(trail, 1.2)  
-    Debris:AddItem(a0, 1.2)  
-    Debris:AddItem(a1, 1.2)
+    -- Animação de rotação
+    local rotationTween = TweenService:Create(
+        particle,
+        TweenInfo.new(math.random(2, 5), Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
+        {Rotation = 360}
+    )
+    rotationTween:Play()
 end
 
--- Função para criar rastros elétricos no corpo
-local function createElectricTrails()
-    if not effectsEnabled then return end
-    
-    local colors = getCurrentColors()
-    
-    local parts = {
-        {part = character:FindFirstChild("Head"), offset = Vector3.new(0, 0.4, 0)},
-        {part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftUpperArm"), offset = Vector3.new(0, -0.5, 0)},
-        {part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightUpperArm"), offset = Vector3.new(0, -0.5, 0)},
-        {part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftUpperLeg"), offset = Vector3.new(0, -0.5, 0)},
-        {part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightUpperLeg"), offset = Vector3.new(0, -0.5, 0)},
-        {part = humanoidRootPart, offset = Vector3.new(0.5, 1, 0)}
-    }
-    
-    for _, info in ipairs(parts) do  
-        if info.part then  
-            local att0 = Instance.new("Attachment", info.part)  
-            local att1 = Instance.new("Attachment", info.part)  
-            att0.Position = info.offset  
-            att1.Position = info.offset + Vector3.new(0, -0.3, 0)  
-            
-            local trail = Instance.new("Trail", info.part)  
-            trail.Attachment0 = att0  
-            trail.Attachment1 = att1  
-            trail.Color = ColorSequence.new(colors.secondary)
-            trail.Lifetime = 0.3  
-            trail.Transparency = NumberSequence.new(0.2)  
-            trail.WidthScale = NumberSequence.new(0.4)  
-            trail.LightEmission = 1  
-            
-            table.insert(electricTrails, trail)  
-            table.insert(electricTrails, att0)  
-            table.insert(electricTrails, att1)  
-        end  
-    end
-end
+-- Animação do gradiente
+local gradientTween = TweenService:Create(
+    gradient,
+    TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
+    {Rotation = 405}
+)
+gradientTween:Play()
 
--- Função para destruir rastros elétricos
-local function destroyElectricTrails()
-    for _, obj in pairs(electricTrails) do
-        if obj and obj.Parent then 
-            obj:Destroy() 
-        end
-    end
-    electricTrails = {}
-end
+-- Animação de pulsação do texto principal
+local pulseTween = TweenService:Create(
+    mainText,
+    TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+    {TextStrokeThickness = 6}
+)
+pulseTween:Play()
 
--- Função para atualizar cor da GUI
-local function updateGUIColors()
-    local colors = getCurrentColors()
-    if titleLabel then
-        titleLabel.BackgroundColor3 = colors.primary
-    end
-    if mainFrame then
-        mainFrame.BorderColor3 = colors.border
-    end
-end
-
--- Sistema de movimento rápido
-local function startSpeedSystem()
-    RunService.RenderStepped:Connect(function()
-        if speedActive and isFlash then
-            local moveDirection = humanoid.MoveDirection
-            if moveDirection.Magnitude > 0 then
-                humanoidRootPart.CFrame = humanoidRootPart.CFrame + (moveDirection * speedMultiplier)
-                
-                -- Criar rastros quando se movendo
-                if effectsEnabled and math.random() < 0.3 then
-                    lightningTrail()
-                end
-                
-                -- Som ocasional
-                if zap and not zap.IsPlaying and math.random() < 0.1 then
-                    zap:Play()
-                end
-            end
-        end
+-- Função do botão fechar
+closeButton.MouseButton1Click:Connect(function()
+    local closeTween = TweenService:Create(
+        mainFrame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+        {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}
+    )
+    closeTween:Play()
+    
+    closeTween.Completed:Connect(function()
+        screenGui:Destroy()
     end)
-end
-
--- Função principal do Flash
-local function toggleFlash()
-    isFlash = not isFlash
-    
-    if isFlash then
-        -- Efeitos sonoros
-        if rumble then rumble:Play() end
-        
-        -- Efeito de câmera
-        TweenService:Create(cam, TweenInfo.new(0.3), {FieldOfView = 90}):Play()
-        
-        -- Criar rastros elétricos
-        if effectsEnabled then
-            createElectricTrails()
-        end
-        
-        -- Ativar partículas se velocidade estiver ativa
-        if speedActive then
-            lightningParticles.Enabled = true
-        end
-        
-    else
-        -- Desativar Flash
-        if rumble then rumble:Stop() end
-        
-        -- Restaurar câmera
-        TweenService:Create(cam, TweenInfo.new(0.3), {FieldOfView = 70}):Play()
-        
-        -- Remover efeitos
-        destroyElectricTrails()
-        lightningParticles.Enabled = false
-    end
-end
-
--- Função para ativar/desativar velocidade
-local function toggleSpeed()
-    speedActive = not speedActive
-    
-    if speedActive and isFlash then
-        lightningParticles.Enabled = true
-    else
-        lightningParticles.Enabled = false
-    end
-end
-
--- Função para trocar cor
-local function changeColorScheme(newScheme)
-    if colorSchemes[newScheme] then
-        currentColorScheme = newScheme
-        updateGUIColors()
-        
-        -- Se o Flash estiver ativo, recriar os efeitos com a nova cor
-        if isFlash then
-            destroyElectricTrails()
-            if effectsEnabled then
-                createElectricTrails()
-            end
-        end
-    end
-end
-
--- Criar GUI - AUMENTADA
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FlashGUI"
-gui.ResetOnSpawn = false
-
--- Frame principal - TAMANHO DIMINUÍDO
-local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 300, 0, 220) -- DIMINUÍDO de 380x280 para 300x220
-mainFrame.Position = UDim2.new(0, 20, 1, -240) -- AJUSTADO posição
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2 -- DIMINUÍDO
-mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-mainFrame.Active = true
-mainFrame.Draggable = true
-
--- Título - DIMINUÍDO
-local titleLabel = Instance.new("TextLabel", mainFrame)
-titleLabel.Size = UDim2.new(1, 0, 0, 28) -- DIMINUÍDO de 35 para 28
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-titleLabel.Text = "⚡ FLASH POWERS ⚡"
-titleLabel.TextColor3 = Color3.new(1, 1, 1)
-titleLabel.TextScaled = true
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.BorderSizePixel = 0
-
--- Botão Flash Principal - DIMINUÍDO
-local flashBtn = Instance.new("TextButton", mainFrame)
-flashBtn.Size = UDim2.new(0.95, 0, 0, 32) -- DIMINUÍDO de 40 para 32
-flashBtn.Position = UDim2.new(0.025, 0, 0, 32) -- AJUSTADO posição
-flashBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-flashBtn.Text = "⚡ FLASH: OFF"
-flashBtn.TextSize = 14 -- DIMINUÍDO de 16 para 14
-flashBtn.Font = Enum.Font.SourceSansBold
-flashBtn.TextColor3 = Color3.new(1, 1, 1)
-flashBtn.BorderSizePixel = 1 -- DIMINUÍDO
-
--- Botão Velocidade - DIMINUÍDO
-local speedBtn = Instance.new("TextButton", mainFrame)
-speedBtn.Size = UDim2.new(0.6, 0, 0, 28) -- DIMINUÍDO de 35 para 28
-speedBtn.Position = UDim2.new(0.025, 0, 0, 70) -- AJUSTADO posição
-speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-speedBtn.Text = "Velocidade: OFF"
-speedBtn.TextSize = 12 -- DIMINUÍDO de 14 para 12
-speedBtn.Font = Enum.Font.SourceSans
-speedBtn.TextColor3 = Color3.new(1, 1, 1)
-speedBtn.BorderSizePixel = 1 -- DIMINUÍDO
-
--- TextBox para velocidade - DIMINUÍDO
-local speedInput = Instance.new("TextBox", mainFrame)
-speedInput.Size = UDim2.new(0.35, 0, 0, 28) -- DIMINUÍDO de 35 para 28
-speedInput.Position = UDim2.new(0.63, 0, 0, 70) -- AJUSTADO posição
-speedInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-speedInput.Text = tostring(speedMultiplier)
-speedInput.PlaceholderText = "Velocidade"
-speedInput.TextSize = 12 -- DIMINUÍDO de 14 para 12
-speedInput.Font = Enum.Font.SourceSans
-speedInput.TextColor3 = Color3.new(0, 0, 0)
-speedInput.BorderSizePixel = 1 -- DIMINUÍDO
-
--- Botão Efeitos - DIMINUÍDO
-local effectBtn = Instance.new("TextButton", mainFrame)
-effectBtn.Size = UDim2.new(0.95, 0, 0, 28) -- DIMINUÍDO de 35 para 28
-effectBtn.Position = UDim2.new(0.025, 0, 0, 105) -- AJUSTADO posição
-effectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-effectBtn.Text = "Efeitos: ON"
-effectBtn.TextSize = 12 -- DIMINUÍDO de 14 para 12
-effectBtn.Font = Enum.Font.SourceSans
-effectBtn.TextColor3 = Color3.new(1, 1, 1)
-effectBtn.BorderSizePixel = 1 -- DIMINUÍDO
-
--- Label para cores - DIMINUÍDO
-local colorLabel = Instance.new("TextLabel", mainFrame)
-colorLabel.Size = UDim2.new(1, 0, 0, 22) -- DIMINUÍDO de 25 para 22
-colorLabel.Position = UDim2.new(0, 0, 0, 140) -- AJUSTADO posição
-colorLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-colorLabel.Text = "🎨 Cores dos Efeitos:"
-colorLabel.TextColor3 = Color3.new(1, 1, 1)
-colorLabel.TextSize = 11 -- DIMINUÍDO de 13 para 11
-colorLabel.Font = Enum.Font.SourceSansBold
-colorLabel.BorderSizePixel = 0
-
--- Frame para botões de cor - DIMINUÍDO
-local colorFrame = Instance.new("Frame", mainFrame)
-colorFrame.Size = UDim2.new(0.95, 0, 0, 55) -- DIMINUÍDO de 70 para 55
-colorFrame.Position = UDim2.new(0.025, 0, 0, 165) -- AJUSTADO posição
-colorFrame.BackgroundTransparency = 1
-
--- Criar botões de cor em grade 4x2 - AUMENTADOS
-local colorButtons = {}
-local colorKeys = {"vermelho", "azul", "preto", "branco", "roxo", "verde", "dourado", "rosa"}
-
-for i, colorKey in ipairs(colorKeys) do
-    local row = math.floor((i-1) / 4)
-    local col = (i-1) % 4
-    
-    local colorBtn = Instance.new("TextButton", colorFrame)
-    colorBtn.Size = UDim2.new(0.23, 0, 0.38, 0) -- DIMINUÍDO altura
-    colorBtn.Position = UDim2.new(col * 0.25 + 0.01, 0, row * 0.5 + 0.06, 0)
-    colorBtn.BackgroundColor3 = colorSchemes[colorKey].primary
-    colorBtn.Text = ""
-    colorBtn.BorderSizePixel = 2 -- DIMINUÍDO
-    colorBtn.BorderColor3 = Color3.new(1, 1, 1)
-    
-    -- Texto com nome da cor - DIMINUÍDO
-    local colorText = Instance.new("TextLabel", colorBtn)
-    colorText.Size = UDim2.new(1, 0, 1, 0)
-    colorText.Position = UDim2.new(0, 0, 0, 0)
-    colorText.BackgroundTransparency = 1
-    colorText.Text = colorSchemes[colorKey].name
-    colorText.TextColor3 = Color3.new(1, 1, 1)
-    colorText.TextSize = 9 -- DIMINUÍDO de 10 para 9
-    colorText.Font = Enum.Font.SourceSansBold
-    colorText.TextStrokeTransparency = 0.5
-    colorText.TextStrokeColor3 = Color3.new(0, 0, 0)
-    
-    colorBtn.MouseButton1Click:Connect(function()
-        changeColorScheme(colorKey)
-        
-        -- Atualizar visual dos botões (destacar selecionado)
-        for _, btn in pairs(colorButtons) do
-            btn.BorderColor3 = Color3.new(1, 1, 1)
-            btn.BorderSizePixel = 2 -- DIMINUÍDO
-        end
-        
-        colorBtn.BorderColor3 = Color3.new(0, 1, 0)
-        colorBtn.BorderSizePixel = 3 -- DIMINUÍDO para destacar menos
-    end)
-    
-    table.insert(colorButtons, colorBtn)
-end
-
--- Destacar cor inicial
-if colorButtons[1] then
-    colorButtons[1].BorderColor3 = Color3.new(0, 1, 0)
-    colorButtons[1].BorderSizePixel = 3
-end
-
--- Eventos dos botões principais
-flashBtn.MouseButton1Click:Connect(function()
-    toggleFlash()
-    if isFlash then
-        flashBtn.Text = "⚡ FLASH: ON"
-        flashBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    else
-        flashBtn.Text = "⚡ FLASH: OFF"
-        flashBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    end
 end)
 
-speedBtn.MouseButton1Click:Connect(function()
-    toggleSpeed()
-    if speedActive then
-        speedBtn.Text = "Velocidade: ON"
-        speedBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    else
-        speedBtn.Text = "Velocidade: OFF"
-        speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    end
+-- Animação de entrada
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+local openTween = TweenService:Create(
+    mainFrame,
+    TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+    {Size = UDim2.new(0.9, 0, 0.9, 0), Position = UDim2.new(0.05, 0, 0.05, 0)}
+)
+openTween:Play()
+
+-- Efeito de hover no botão
+closeButton.MouseEnter:Connect(function()
+    local hoverTween = TweenService:Create(
+        closeButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = Color3.fromRGB(255, 100, 100)}
+    )
+    hoverTween:Play()
 end)
 
-effectBtn.MouseButton1Click:Connect(function()
-    effectsEnabled = not effectsEnabled
-    if effectsEnabled then
-        effectBtn.Text = "Efeitos: ON"
-        effectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        if isFlash then createElectricTrails() end
-    else
-        effectBtn.Text = "Efeitos: OFF"
-        effectBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        destroyElectricTrails()
-    end
+closeButton.MouseLeave:Connect(function()
+    local leaveTween = TweenService:Create(
+        closeButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 50, 0, 50), BackgroundColor3 = Color3.fromRGB(255, 0, 0)}
+    )
+    leaveTween:Play()
 end)
 
--- Atualizar velocidade via TextBox
-speedInput.FocusLost:Connect(function(enterPressed)
-    local newSpeed = tonumber(speedInput.Text)
-    if newSpeed then
-        speedMultiplier = newSpeed
-        speedInput.Text = tostring(newSpeed)
-    else
-        speedInput.Text = tostring(speedMultiplier)
-    end
-end)
-
--- Inicializar cores da GUI
-updateGUIColors()
-
--- Iniciar sistema de velocidade
-startSpeedSystem()
-
--- Limpeza ao trocar de personagem
-player.CharacterRemoving:Connect(function()
-    isFlash = false
-    speedActive = false
-    destroyElectricTrails()
-    if rumble then rumble:Stop() end
-end)
-
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    humanoid = newChar:WaitForChild("Humanoid")
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    
-    -- Recriar sons
-    rumble = Instance.new("Sound", humanoidRootPart)
-    rumble.SoundId = "rbxassetid://1837635124"
-    rumble.Looped = true
-    rumble.Volume = 0.8
-    
-    zap = Instance.new("Sound", humanoidRootPart)
-    zap.SoundId = "rbxassetid://138218317"
-    zap.Volume = 0.6
-    
-    -- Recriar partículas
-    lightningParticles = createLightningEffect()
-end)
+print("GUI GIGANTESCA CRIADA COM SUCESSO!")
